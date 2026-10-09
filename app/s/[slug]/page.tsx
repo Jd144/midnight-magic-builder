@@ -50,8 +50,8 @@ export default function Published({
     <>
       {!supabase && (
         <div className="share">
-          LOCAL DEMO SNAPSHOT · Visible only in this browser · No public website
-          has been deployed.
+          BROWSER-ONLY DEMO SNAPSHOT · Visible only in this browser · This birthday
+          snapshot is not publicly shared.
         </div>
       )}
       {site ? (

@@ -4,7 +4,7 @@ test("demo: create, edit, save, reload, snapshot isolation, unpublish, duplicate
   context,
 }) => {
   await page.goto("/");
-  await expect(page.getByText("LOCAL DEMO", { exact: true })).toBeVisible();
+  await expect(page.getByText("BROWSER DEMO", { exact: true })).toBeVisible();
   await page
     .getByRole("button", { name: "Create a birthday website", exact: true })
     .click();

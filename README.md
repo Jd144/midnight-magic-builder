@@ -2,6 +2,12 @@
 
 A reusable cinematic birthday website builder with Next.js 16, TypeScript, Tailwind CSS 4 and Supabase. No recipient is hardcoded. Includes twelve provisional chapters, a private studio, visual editing, crop and position controls, image/video/music uploads, YouTube/Vimeo links, optional music, mobile layouts and reduced-motion support.
 
+## Public app demonstration
+
+[Open Midnight Magic](https://midnight-magic-birthday-studio.awake-sky-0868.chatgpt.site). Public access is enabled; visitors do not need to log in to explore the demo. **The app is publicly hosted, but this is still a browser-only demo:** accounts and birthday snapshots are not shared across browsers until Supabase is configured. Demo QR codes cannot share a birthday page with another device.
+
+The hosted demonstration uses the Sites Vinext adapter for the same Next.js application files. The GitHub application retains its normal Next.js development/build commands. Hosting identity and the published version are recorded in `.openai/hosting.json` and `.openai/publication.json`; the hosted adapter source is managed separately in the Site source repository. Do not create another Site for future updates. Within this Codex workspace, use the existing `work/public-hosting` checkout; elsewhere obtain that Site's source using its recorded project ID.
+
 ## Run locally
 
 Requires Node.js 20.9+ and npm.
@@ -11,7 +17,7 @@ npm ci
 npm run dev
 ```
 
-Open http://127.0.0.1:3000. With both Supabase environment values absent, the application runs in **LOCAL DEMO** mode. Draft JSON is in localStorage; media blobs are in IndexedDB. No login is simulated. Demo snapshots are browser-only, never public, and cannot be opened on another device or browser profile. Clearing browser data removes demo content. Use Save draft before closing the tab; returning to the dashboard saves the active draft.
+Open http://127.0.0.1:3000. With both Supabase environment values absent, the application runs in **BROWSER DEMO** mode. Draft JSON is in localStorage; media blobs are in IndexedDB. No login is simulated. The app itself can be publicly hosted, but demo birthday snapshots are browser-only and cannot be opened on another device or browser profile. Clearing browser data removes demo content. Use Save draft before closing the tab; returning to the dashboard saves the active draft.
 
 ## Connect Supabase
 
@@ -52,11 +58,13 @@ npx playwright test
 
 The model tests check neutral independent stories, chapter reordering, file validation and video URL allowlists. QR tests decode the generated PNG back into its exact snapshot URL. The PGlite test executes the real migration and ownership assertions against embedded PostgreSQL with small test-only Auth/Storage schema stand-ins. It checks database rules and syntax without pretending to test Supabase network services. Browser tests cover save/reload, snapshot isolation, hide/reorder, unpublish, duplicate/delete, persistent media, replacement/cropping, all twelve chapters, countdown/surprise, theme, music/video playback controls, reduced motion, phone preview and QR downloads.
 
-For a real disposable Supabase database, execute `supabase/tests/ownership.sql` with `psql -v ON_ERROR_STOP=1`. It rolls back fixtures. Connected Auth/Storage HTTP flows still require integration checks with real credentials. No public deployment is part of this implementation.
+For a real disposable Supabase database, execute `supabase/tests/ownership.sql` with `psql -v ON_ERROR_STOP=1`. It rolls back fixtures. Connected Auth/Storage HTTP flows still require integration checks with real credentials. A public app demonstration remains a browser-only demo until Supabase is connected.
 
-## Future deployment (not performed)
+## Connect a real backend or deploy Next.js elsewhere
 
-When deployment is explicitly requested, deploy this Next.js app to a Node.js host or Vercel. Set both Supabase environment values and `NEXT_PUBLIC_SITE_URL` to the final HTTPS origin at build time. Run the migration once on that environment's Supabase project, configure Auth Site URL and confirmation redirect URLs to that origin, then build with `npm run build` and run with `npm start` on a Node host (configure its reverse proxy/port and HTTPS). Verify two-user ownership and anonymous visitor/media/QR flows before sharing links. Do not deploy a credentials-free demo as a multi-user service.
+To enable accounts and genuinely shared birthday pages on the existing public app, first create a Supabase project, apply the included migration and configure email authentication. Rebuild the hosted adapter with both public Supabase environment values and `NEXT_PUBLIC_SITE_URL` set to the published origin. Verify two-user ownership and anonymous visitor/media/QR flows before presenting it as a live multi-user service.
+
+For another host, deploy the original Next.js app to Node.js or Vercel. Set both Supabase environment values and `NEXT_PUBLIC_SITE_URL` to the final HTTPS origin at build time. Run the migration once on that environment's Supabase project, configure Auth Site URL and confirmation redirect URLs to that origin, then build with `npm run build` and run with `npm start` on a Node host (configure its reverse proxy/port and HTTPS). A credentials-free deployment must remain clearly labeled as a browser-only demo.
 
 ## Specification provenance
 

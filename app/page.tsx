@@ -285,7 +285,7 @@ export default function Home() {
         </a>
         <div className="header-right">
           <span className="mode">
-            {supabase ? "CONNECTED BACKEND" : "LOCAL DEMO"}
+            {supabase ? "CONNECTED BACKEND" : "BROWSER DEMO"}
           </span>
           {supabase ? (
             <button
