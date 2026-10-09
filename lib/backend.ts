@@ -136,10 +136,10 @@ export async function deleteSite(id: string) {
   const { error } = await supabase.from("sites").delete().eq("id", id);
   if (error) throw error;
 }
-export async function publish(site: Site, onProgress?: (value: number) => void) {
+export async function publish(site: Site, onProgress?: (value: number) => void, onWarning?: (message: string) => void) {
   await saveSite(site);
   if (!supabase) {
-    if (onlineSharing) return publishOnline(site, onProgress);
+    if (onlineSharing) return publishOnline(site, onProgress, onWarning);
     localStorage.setItem(
       "mm-published-" + site.id,
       JSON.stringify({

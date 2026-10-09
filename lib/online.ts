@@ -28,9 +28,12 @@ async function request(id: string, method: string, body?: BodyInit, suffix = '',
   }
   return response;
 }
-export async function publishOnline(site: Site, onProgress?: (value: number) => void) {
+export async function publishOnline(site: Site, onProgress?: (value: number) => void, onWarning?: (message: string) => void) {
   await request(site.id, 'POST'); // Reserve the stable slug under the editing capability.
-  const snapshot = preparePublicationMedia(site, location.origin);
+  const snapshot = preparePublicationMedia(site, location.origin, true);
+  const warnings = new Set<string>();
+  const musicWarning = 'Published without background music because its saved address or file is unavailable. Your original draft is preserved.';
+  if (site.music.trim() && !snapshot.music) warnings.add(musicWarning);
   const sources = [...new Set([snapshot.music, ...snapshot.chapters.flatMap(c => c.media.map(m => m.src))].filter(s => /^(local:|blob:|data:)/i.test(s)))];
   const uploaded = new Map<string, string>();
   for (let i = 0; i < sources.length; i++) {
@@ -51,7 +54,7 @@ export async function publishOnline(site: Site, onProgress?: (value: number) => 
     });
     const legacyMedia = snapshot.chapters.flatMap(c=>c.media).find(m=>m.src===source);
     let blob = await new Promise<Blob | undefined>((resolve, reject) => {
-      const id = source.startsWith('local:') ? source.slice(6) : legacyMedia?.id;
+      const id = source.startsWith('local:') ? source.slice(6) : legacyMedia?.id || (source === snapshot.music ? site.musicPath : undefined);
       if (!id) { resolve(undefined); return; }
       const r = db.transaction('media').objectStore('media').get(id);
       r.onsuccess = () => resolve(r.result); r.onerror = () => reject(r.error);
@@ -59,6 +62,7 @@ export async function publishOnline(site: Site, onProgress?: (value: number) => 
     if (!blob && /^(blob:|data:)/i.test(source)) {
       try { blob = await (await fetch(source)).blob(); } catch { /* The old object URL may have expired. */ }
     }
+    if (!blob && source === snapshot.music && !legacyMedia) { snapshot.music = ''; warnings.add(musicWarning); continue; }
     if (!blob) throw new Error(`${legacyMedia?.caption || 'A saved media file'} is unavailable in this browser. Choose its original file again using Media before publishing. Your words and draft are preserved.`);
     validateFile(blob);
     const file = crypto.randomUUID();
@@ -91,7 +95,9 @@ export async function publishOnline(site: Site, onProgress?: (value: number) => 
     media.src = uploaded.get(media.src) || media.src;
     delete media.path;
   }
-  await request(site.id, 'PUT', JSON.stringify(snapshot));
+  const result = await (await request(site.id, 'PUT', JSON.stringify(snapshot))).json() as {warnings?:string[]};
+  for (const warning of result.warnings || []) warnings.add(warning);
+  if (warnings.size) onWarning?.([...warnings].join(' '));
   localStorage.setItem('mm-online-' + site.id, '1');
   onProgress?.(100);
   return site.id;

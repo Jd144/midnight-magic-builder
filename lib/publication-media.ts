@@ -1,6 +1,6 @@
 import type { Site } from './model';
 
-export function preparePublicationMedia(site: Site, origin: string): Site {
+export function preparePublicationMedia(site: Site, origin: string, omitUnshareableMusic = false): Site {
   const snapshot = structuredClone(site);
   snapshot.chapters = snapshot.chapters.filter(c => !c.hidden);
   const normalize = (source: string, label: string) => {
@@ -16,7 +16,8 @@ export function preparePublicationMedia(site: Site, origin: string): Site {
     if (url.protocol !== 'https:') throw new Error(`${label}: this is a device-only or HTTP link. Upload that file using Media, or replace it with a full HTTPS link. Your draft has not been removed.`);
     return url.href;
   };
-  snapshot.music = normalize(snapshot.music, 'Background music');
+  try { snapshot.music = normalize(snapshot.music, 'Background music'); }
+  catch (error) { if (!omitUnshareableMusic) throw error; snapshot.music = ''; }
   for (const chapter of snapshot.chapters) for (const [index, media] of chapter.media.entries()) {
     media.src = normalize(media.src, `${chapter.title} · ${media.kind} ${index + 1}`);
   }

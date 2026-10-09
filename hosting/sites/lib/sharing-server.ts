@@ -52,6 +52,13 @@ export async function publishSnapshot(request:Request,id:string) {
   const snapshot = siteSchema.parse(JSON.parse(body));
   if(snapshot.id!==id) throw new SharingError('Story ID mismatch.');
   const origin = new URL(request.url).origin;
+  const warnings: string[] = [];
+  snapshot.music = snapshot.music.trim();
+  if (snapshot.music) {
+    let playable = false;
+    try { const music = new URL(snapshot.music); playable = music.protocol === 'https:' || (music.origin === origin && music.pathname.startsWith('/api/sharing/')); } catch {}
+    if (!playable) { snapshot.music = ''; warnings.push('Published without background music because its saved address is unavailable. Your original draft is preserved.'); }
+  }
   const references = [{value:snapshot.music,label:'Background music'},...snapshot.chapters.flatMap(c=>c.media.map((m,i)=>({value:m.src,label:`${c.title} · ${m.kind} ${i+1}`})))];
   for (const {value,label} of references) {
     if (!value) continue;
@@ -62,7 +69,7 @@ export async function publishSnapshot(request:Request,id:string) {
     } else if(u.protocol!=='https:') throw new SharingError(`${label}: this file is still using a device-only or HTTP address. Refresh the editor and publish again to upload saved media. If it is an external link, replace it with HTTPS or choose the original file using Media. Your saved draft is preserved.`);
   }
   await db.update(publications).set({snapshot:JSON.stringify(snapshot)}).where(and(eq(publications.id,id),eq(publications.ownerHash,hash)));
-  return json({id});
+  return json({id,warnings});
 }
 export async function unpublishSnapshot(request:Request,id:string) {
   const {db,hash} = await owner(request,id);

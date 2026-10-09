@@ -355,7 +355,8 @@ export default function Home() {
                   void action(async () => {
                     if (onlineSharing) setProgress(0);
                     let slug: string;
-                    try { slug = await publish(site, setProgress); }
+                    let warning = "";
+                    try { slug = await publish(site, setProgress, value => { warning = value; }); }
                     finally { setProgress(null); }
                     setSavedContent(JSON.stringify(site));
                     setShare(
@@ -366,7 +367,7 @@ export default function Home() {
                     );
                     setMessage(
                       supabase || onlineSharing
-                        ? "Published snapshot created. Draft changes stay private until you publish again."
+                        ? "Published snapshot created. Draft changes stay private until you publish again." + (warning ? " " + warning : "")
                         : "Local demo snapshot created. This link works only in this browser.",
                     );
                     await refresh();
@@ -631,6 +632,7 @@ export default function Home() {
                         <option value="sans">Modern sans</option>
                       </select>
                     </label>
+                    {(site.music.trim() || site.musicPath) && <div><small>Background music is attached to this draft.</small><button type="button" onClick={() => update({music: "", musicPath: undefined})}>Remove background music</button></div>}
                     <label>
                       Optional music URL
                       <input

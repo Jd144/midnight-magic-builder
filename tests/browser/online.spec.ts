@@ -11,7 +11,7 @@ test('legacy story preserved; independent visitors, media, ownership, snapshot i
   await page.goto('/');
   story.chapters[0].media[0].src='blob:'+new URL(process.env.MIDNIGHT_TEST_BASE_URL!).origin+'/'+crypto.randomUUID();
   story.chapters[0].media.push({id:crypto.randomUUID(),kind:'image',src:'data:image/png;base64,'+png,caption:'Inline legacy photo',x:50,y:50,zoom:1});
-  story.music='  ';
+  story.music='local:'+crypto.randomUUID();
   await page.evaluate(async({story,mediaId,png})=>{
     localStorage.setItem('mm-drafts',JSON.stringify([story]));
     localStorage.setItem('mm-published-'+story.id,JSON.stringify(story));
@@ -25,6 +25,8 @@ test('legacy story preserved; independent visitors, media, ownership, snapshot i
   await expect(page.getByText('Saved demo link · choose Publish online to activate',{exact:true})).toBeVisible();
   await page.getByRole('button',{name:'Publish online',exact:true}).click();
   await expect(page.getByText('Public birthday link · opens on any device',{exact:true})).toBeVisible();
+  await expect(page.getByRole('status')).toContainText('without background music');
+  expect(await page.evaluate(id=>JSON.parse(localStorage.getItem('mm-drafts')!)[0].music,story.id)).toBe(story.music);
   const href=await page.locator('.share > a').getAttribute('href');
   expect(href).toContain('/s/'+story.id);
   expect(await page.evaluate(id=>!!localStorage.getItem('mm-published-'+id),story.id)).toBe(true);
@@ -45,6 +47,7 @@ test('legacy story preserved; independent visitors, media, ownership, snapshot i
   expect(await view.evaluate(()=>Object.keys(localStorage).length)).toBe(0);
   expect(await view.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
   const publicSnapshot=await (await probe('GET','/api/sharing/'+story.id)).json();
+  expect(publicSnapshot.music).toBe('');
   const photo=publicSnapshot.chapters[0].media[0];expect(photo.x).toBe(25);expect(photo.zoom).toBe(1.5);
   const file=await probe('GET',photo.src);expect(file.status()).toBe(200);expect(file.headers()['content-type']).toBe('image/png');
   const range=await probe('GET',photo.src,{headers:{Range:'bytes=0-7'}});expect(range.status()).toBe(206);expect((await range.body()).length).toBe(8);
@@ -55,6 +58,10 @@ test('legacy story preserved; independent visitors, media, ownership, snapshot i
   const ownToken=await page.evaluate(id=>localStorage.getItem('mm-publication-key-'+id),story.id);
   expect((await probe('PUT','/api/sharing/'+story.id,{headers:{Authorization:'Bearer '+ownToken,Origin:'https://untrusted.example'},data:publicSnapshot})).status()).toBe(403);
   const ownHeader={Authorization:'Bearer '+ownToken};
+  for(const music of ['file:///C:/old/song.mp3','http://audio.example/song.mp3','blob:https://old.example/missing']) {
+    const result=await probe('PUT','/api/sharing/'+story.id,{headers:ownHeader,data:{...publicSnapshot,music}});expect(result.status()).toBe(200);expect((await result.json()).warnings.length).toBe(1);
+    expect((await (await probe('GET','/api/sharing/'+story.id)).json()).music).toBe('');
+  }
   expect((await probe('PUT','/api/sharing/'+story.id+'/media/'+crypto.randomUUID(),{headers:{...ownHeader,'Content-Type':'image/svg+xml'},data:'<svg/>'})).status()).toBe(400);
   const foreign=structuredClone(publicSnapshot);foreign.chapters[0].media[0].src=new URL('/api/sharing/'+crypto.randomUUID()+'/media/'+crypto.randomUUID(),href!).href;
   expect((await probe('PUT','/api/sharing/'+story.id,{headers:ownHeader,data:foreign})).status()).toBe(403);

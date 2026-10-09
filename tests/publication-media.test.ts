@@ -16,3 +16,11 @@ test('device file paths and external HTTP URLs identify the affected chapter ins
   site.chapters[5].hidden=true;assert.equal(preparePublicationMedia(site,'https://birthday.example').chapters.length,11);
   site.music='http://audio.example/song.mp3';assert.throws(()=>preparePublicationMedia(site,'https://birthday.example'),/Background music/);
 });
+
+test('optional stale music is omitted without changing the draft or relaxing chapter validation',()=>{
+ const site=newSite();site.music='file:///C:/old/song.mp3';const original=structuredClone(site);
+ assert.equal(preparePublicationMedia(site,'https://birthday.example',true).music,'');assert.deepEqual(site,original);
+ site.music='https://audio.example/song.mp3';assert.equal(preparePublicationMedia(site,'https://birthday.example',true).music,site.music);
+ site.chapters[0].media=[{id:crypto.randomUUID(),kind:'image',src:'file:///C:/photo.jpg',caption:'',x:50,y:50,zoom:1}];
+ assert.throws(()=>preparePublicationMedia(site,'https://birthday.example',true),/image 1/);
+});
