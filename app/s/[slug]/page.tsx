@@ -3,6 +3,7 @@ import { use, useEffect, useState } from "react";
 import { Site } from "@/lib/model";
 import { supabase, resolveMedia } from "@/lib/backend";
 import Experience from "@/components/Experience";
+import { onlineSharing, readOnline } from '@/lib/online';
 export default function Published({
   params,
 }: {
@@ -27,6 +28,8 @@ export default function Published({
               "This birthday story is unavailable. It may have been unpublished.",
             );
           draft = data.snapshot;
+        } else if (onlineSharing) {
+          draft = await readOnline(slug);
         } else {
           const stored = localStorage.getItem("mm-published-" + slug);
           if (!stored)
@@ -48,7 +51,7 @@ export default function Published({
   }, [slug]);
   return (
     <>
-      {!supabase && (
+      {!supabase && !onlineSharing && (
         <div className="share">
           BROWSER-ONLY DEMO SNAPSHOT · Visible only in this browser · This birthday
           snapshot is not publicly shared.

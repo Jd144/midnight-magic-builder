@@ -41,6 +41,7 @@ import {
 import Experience from "@/components/Experience";
 import DevicePreview from "@/components/DevicePreview";
 import { generateQR, snapshotURL } from "@/lib/qr";
+import { onlineSharing } from '@/lib/online';
 export default function Home() {
   const [ready, setReady] = useState(false);
   const [user, setUser] = useState<string | null>(null);
@@ -64,6 +65,7 @@ export default function Home() {
   const [qr, setQR] = useState("");
   const [savedContent, setSavedContent] = useState("");
   const dirty = !!site && JSON.stringify(site) !== savedContent;
+  const sharedOnline = !!supabase || (onlineSharing && !!site && ready && !!localStorage.getItem('mm-online-' + site.id));
   useEffect(() => {
     setSavedContent(
       sites.some((s) => s.id === site?.id) ? JSON.stringify(site) : "",
@@ -182,7 +184,7 @@ export default function Home() {
     setSavedContent(JSON.stringify(site));
     await refresh();
     setMessage(
-      supabase ? "Saved to your account." : "Saved on this browser. Demo mode.",
+      supabase ? "Saved to your account." : onlineSharing ? "Draft saved safely in this browser. Publish online to share it." : "Saved on this browser. Demo mode.",
     );
   }
   async function upload(file: File, replaceId?: string) {
@@ -285,7 +287,7 @@ export default function Home() {
         </a>
         <div className="header-right">
           <span className="mode">
-            {supabase ? "CONNECTED BACKEND" : "BROWSER DEMO"}
+            {supabase ? "CONNECTED BACKEND" : onlineSharing ? "ONLINE SHARING" : "BROWSER DEMO"}
           </span>
           {supabase ? (
             <button
@@ -302,7 +304,7 @@ export default function Home() {
             </button>
           ) : (
             <span className="muted desktop-only">
-              No account needed to explore
+              {onlineSharing ? 'Birthday links open on any device' : 'No account needed to explore'}
             </span>
           )}
         </div>
@@ -351,7 +353,10 @@ export default function Home() {
                 disabled={busy}
                 onClick={() =>
                   void action(async () => {
-                    const slug = await publish(site);
+                    if (onlineSharing) setProgress(0);
+                    let slug: string;
+                    try { slug = await publish(site, setProgress); }
+                    finally { setProgress(null); }
                     setSavedContent(JSON.stringify(site));
                     setShare(
                       snapshotURL(
@@ -360,7 +365,7 @@ export default function Home() {
                       ),
                     );
                     setMessage(
-                      supabase
+                      supabase || onlineSharing
                         ? "Published snapshot created. Draft changes stay private until you publish again."
                         : "Local demo snapshot created. This link works only in this browser.",
                     );
@@ -369,14 +374,15 @@ export default function Home() {
                 }
               >
                 <Sparkles size={16} />
-                {supabase ? "Publish snapshot" : "Create demo snapshot"}
+                {supabase ? "Publish snapshot" : onlineSharing ? "Publish online" : "Create demo snapshot"}
               </button>
             </div>
           </div>
+          {onlineSharing && busy && progress !== null && <div className="share" role="status">Publishing online · {progress}% <progress aria-label="Online publishing progress" value={progress} max={100} /></div>}
           {share && (
             <div className="share">
               <span>
-                {supabase ? "Snapshot link" : "Browser-only demo link"}
+                {sharedOnline ? "Public birthday link · opens on any device" : onlineSharing ? "Saved demo link · choose Publish online to activate" : "Browser-only demo link"}
               </span>
               <a href={share} target="_blank" rel="noreferrer">
                 {share}
@@ -400,7 +406,7 @@ export default function Home() {
                   <a href={qr} download={`midnight-magic-${site.id}-qr.png`}>
                     Download QR code
                   </a>
-                  {!supabase && <small>Demo QR · same browser only</small>}
+                  {!sharedOnline && <small>{onlineSharing ? 'Publish online before sharing this QR' : 'Demo QR · same browser only'}</small>}
                 </div>
               )}
               <button
@@ -938,7 +944,7 @@ export default function Home() {
                     <p>
                       Updated {new Date(s.updated).toLocaleDateString()} ·{" "}
                       {s.isPublished
-                        ? supabase
+                        ? supabase || (onlineSharing && !!localStorage.getItem('mm-online-' + s.id))
                           ? "Published"
                           : "Demo snapshot"
                         : "Draft"}
@@ -984,9 +990,7 @@ export default function Home() {
           </div>
           {!supabase && (
             <p className="demo-disclaimer">
-              Local demo: drafts and media stay in this browser. No real
-              authentication or public publishing. Clear browser data to remove
-              them.
+              {onlineSharing ? 'Drafts and original files stay in this browser. Publish online makes a separate copy that anyone with the birthday link can open. Keep this browser to edit or unpublish; account login is not enabled. Existing saved stories are preserved—open one and choose Publish online to activate its old link.' : 'Local demo: drafts and media stay in this browser. No real authentication or public publishing. Clear browser data to remove them.'}
             </p>
           )}
         </main>

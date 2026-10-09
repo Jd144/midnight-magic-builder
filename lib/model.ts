@@ -124,7 +124,7 @@ export function videoEmbed(value: string): string | null {
 export function safeMediaURL(value: string): string {
   try {
     const u = new URL(value);
-    return ["https:", "blob:"].includes(u.protocol) ? value : "";
+    return ["https:", "blob:"].includes(u.protocol) || (u.protocol === 'http:' && ['localhost','127.0.0.1'].includes(u.hostname)) ? value : "";
   } catch {
     return "";
   }

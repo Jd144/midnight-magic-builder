@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { Site } from "./model";
+import { onlineSharing, publishOnline, removeOnline } from './online';
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 export const supabase = url && key ? createClient(url, key) : null;
@@ -85,7 +86,7 @@ export async function listSites(): Promise<Site[]> {
       JSON.parse(localStorage.getItem("mm-drafts") || "[]") as Site[]
     ).map((site) => ({
       ...site,
-      isPublished: !!localStorage.getItem("mm-published-" + site.id),
+      isPublished: !!localStorage.getItem("mm-published-" + site.id) || (onlineSharing && !!localStorage.getItem('mm-online-' + site.id)),
     }));
   const { data, error } = await supabase
     .from("sites")
@@ -124,6 +125,7 @@ export async function saveSite(site: Site) {
 }
 export async function deleteSite(id: string) {
   if (!supabase) {
+    if (onlineSharing) await removeOnline(id);
     localStorage.setItem(
       "mm-drafts",
       JSON.stringify((await listSites()).filter((s) => s.id !== id)),
@@ -134,9 +136,10 @@ export async function deleteSite(id: string) {
   const { error } = await supabase.from("sites").delete().eq("id", id);
   if (error) throw error;
 }
-export async function publish(site: Site) {
+export async function publish(site: Site, onProgress?: (value: number) => void) {
   await saveSite(site);
   if (!supabase) {
+    if (onlineSharing) return publishOnline(site, onProgress);
     localStorage.setItem(
       "mm-published-" + site.id,
       JSON.stringify({
@@ -154,6 +157,7 @@ export async function publish(site: Site) {
 }
 export async function unpublish(id: string) {
   if (!supabase) {
+    if (onlineSharing) await removeOnline(id);
     localStorage.removeItem("mm-published-" + id);
     return;
   }
