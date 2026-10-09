@@ -1,4 +1,6 @@
 import type { Site } from './model';
+import { validateFile } from './model';
+import { preparePublicationMedia } from './publication-media';
 export const onlineSharing = process.env.NEXT_PUBLIC_NATIVE_SHARING === '1';
 
 // This capability permits editing this browser's publications; it is never
@@ -28,24 +30,37 @@ async function request(id: string, method: string, body?: BodyInit, suffix = '',
 }
 export async function publishOnline(site: Site, onProgress?: (value: number) => void) {
   await request(site.id, 'POST'); // Reserve the stable slug under the editing capability.
-  const snapshot = structuredClone(site);
-  snapshot.chapters = snapshot.chapters.filter(c => !c.hidden);
-  const sources = [...new Set([snapshot.music, ...snapshot.chapters.flatMap(c => c.media.map(m => m.src))].filter(s => s.startsWith('local:')))];
+  const snapshot = preparePublicationMedia(site, location.origin);
+  const sources = [...new Set([snapshot.music, ...snapshot.chapters.flatMap(c => c.media.map(m => m.src))].filter(s => /^(local:|blob:|data:)/i.test(s)))];
   const uploaded = new Map<string, string>();
   for (let i = 0; i < sources.length; i++) {
     const source = sources[i];
-    const cacheKey = 'mm-uploaded-' + site.id + '-' + source.slice(6);
+    const cacheId = source.startsWith('data:') ? [...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(source)))].map(v=>v.toString(16).padStart(2,'0')).join('') : source.slice(6);
+    const cacheKey = 'mm-uploaded-' + site.id + '-' + cacheId;
     const existing = localStorage.getItem(cacheKey);
-    if (existing) { uploaded.set(source, existing); continue; }
+    if (existing) {
+      const cached = new URL(existing, location.origin);
+      if (cached.host === location.host && /^\/api\/sharing\/[a-f0-9-]{36}\/media\/[a-f0-9-]{36}$/.test(cached.pathname)) {
+        uploaded.set(source, new URL(cached.pathname, location.origin).href); continue;
+      }
+    }
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
       const r = indexedDB.open('midnight-magic-media', 1);
+      r.onupgradeneeded = () => r.result.createObjectStore('media');
       r.onsuccess = () => resolve(r.result); r.onerror = () => reject(r.error);
     });
-    const blob = await new Promise<Blob | undefined>((resolve, reject) => {
-      const r = db.transaction('media').objectStore('media').get(source.slice(6));
+    const legacyMedia = snapshot.chapters.flatMap(c=>c.media).find(m=>m.src===source);
+    let blob = await new Promise<Blob | undefined>((resolve, reject) => {
+      const id = source.startsWith('local:') ? source.slice(6) : legacyMedia?.id;
+      if (!id) { resolve(undefined); return; }
+      const r = db.transaction('media').objectStore('media').get(id);
       r.onsuccess = () => resolve(r.result); r.onerror = () => reject(r.error);
     }).finally(() => db.close());
-    if (!blob) throw new Error('A saved photo, video or music file is missing. Replace it before publishing.');
+    if (!blob && /^(blob:|data:)/i.test(source)) {
+      try { blob = await (await fetch(source)).blob(); } catch { /* The old object URL may have expired. */ }
+    }
+    if (!blob) throw new Error(`${legacyMedia?.caption || 'A saved media file'} is unavailable in this browser. Choose its original file again using Media before publishing. Your words and draft are preserved.`);
+    validateFile(blob);
     const file = crypto.randomUUID();
     const { url } = await new Promise<{url:string}>((resolve,reject) => {
       const xhr = new XMLHttpRequest();
@@ -63,8 +78,11 @@ export async function publishOnline(site: Site, onProgress?: (value: number) => 
       };
       xhr.send(blob);
     });
-    uploaded.set(source, url);
-    localStorage.setItem(cacheKey, url);
+    const publicURL = new URL(url, location.origin);
+    if (publicURL.host !== location.host || !publicURL.pathname.startsWith('/api/sharing/'+site.id+'/media/')) throw new Error('The upload returned an invalid media address. Your saved draft is still safe.');
+    const canonicalURL = new URL(publicURL.pathname, location.origin).href;
+    uploaded.set(source, canonicalURL);
+    localStorage.setItem(cacheKey, canonicalURL);
     onProgress?.(Math.round((i + 1) / sources.length * 90));
   }
   snapshot.music = uploaded.get(snapshot.music) || snapshot.music;

@@ -52,13 +52,14 @@ export async function publishSnapshot(request:Request,id:string) {
   const snapshot = siteSchema.parse(JSON.parse(body));
   if(snapshot.id!==id) throw new SharingError('Story ID mismatch.');
   const origin = new URL(request.url).origin;
-  for (const value of [snapshot.music,...snapshot.chapters.flatMap(c=>c.media.map(m=>m.src))]) {
+  const references = [{value:snapshot.music,label:'Background music'},...snapshot.chapters.flatMap(c=>c.media.map((m,i)=>({value:m.src,label:`${c.title} · ${m.kind} ${i+1}`})))];
+  for (const {value,label} of references) {
     if (!value) continue;
     const u = new URL(value);
     if (u.origin===origin && u.pathname.startsWith('/api/sharing/')) {
       const match = u.pathname.match(/^\/api\/sharing\/([a-f0-9-]{36})\/media\/([a-f0-9-]{36})$/);
       if (!match || match[1]!==id || !await db.select().from(uploads).where(and(eq(uploads.id,match[2]),eq(uploads.siteId,id))).get()) throw new SharingError('A media file does not belong to this story.',403);
-    } else if(u.protocol!=='https:') throw new SharingError('Media must be uploaded or use HTTPS.');
+    } else if(u.protocol!=='https:') throw new SharingError(`${label}: this file is still using a device-only or HTTP address. Refresh the editor and publish again to upload saved media. If it is an external link, replace it with HTTPS or choose the original file using Media. Your saved draft is preserved.`);
   }
   await db.update(publications).set({snapshot:JSON.stringify(snapshot)}).where(and(eq(publications.id,id),eq(publications.ownerHash,hash)));
   return json({id});

@@ -9,6 +9,9 @@ test('legacy story preserved; independent visitors, media, ownership, snapshot i
   story.chapters[0].media=[{id:mediaId,kind:'image',src:'local:'+mediaId,caption:'Preserved photo',x:25,y:75,zoom:1.5}];
   const png='iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aD1sAAAAASUVORK5CYII=';
   await page.goto('/');
+  story.chapters[0].media[0].src='blob:'+new URL(process.env.MIDNIGHT_TEST_BASE_URL!).origin+'/'+crypto.randomUUID();
+  story.chapters[0].media.push({id:crypto.randomUUID(),kind:'image',src:'data:image/png;base64,'+png,caption:'Inline legacy photo',x:50,y:50,zoom:1});
+  story.music='  ';
   await page.evaluate(async({story,mediaId,png})=>{
     localStorage.setItem('mm-drafts',JSON.stringify([story]));
     localStorage.setItem('mm-published-'+story.id,JSON.stringify(story));
