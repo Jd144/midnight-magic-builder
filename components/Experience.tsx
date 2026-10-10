@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import MemoryConstellation from "./MemoryConstellation";
+import PhotoGallery from "./PhotoGallery";
 import CartoonStory from "./CartoonStory";
 import Keepsake from "./Keepsake";
 import AudioSoundtrack, {type SoundtrackHandle} from "./AudioSoundtrack";
@@ -50,7 +51,7 @@ export default function Experience({
       {!curtainGone && <div role="dialog" aria-modal="true" aria-label="Birthday premiere" className={"curtain-stage "+(opened?"curtain-opening":"")}><div className="curtain-panel curtain-left" aria-hidden="true"/><div className="curtain-panel curtain-right" aria-hidden="true"/>{!opened && <div className="curtain-invitation"><span className="eyebrow">YOUR MIDNIGHT PREMIERE</span><div className="curtain-seal" aria-hidden="true">✦</div><h1>A whole universe,<br/>waiting for you.</h1><p>Some stories deserve a grand entrance.</p><button className="primary" onClick={()=>{soundtrack.current?.start();setOpened(true);}}>Draw the curtains ✦</button><small>Take your time. This moment is yours.</small></div>}</div>}
       <div inert={!opened} aria-hidden={!opened}>
       {theatrical&&<div className="world-label"><span>{scenery.name}</span>{site.rotateThemes!==false&&<button onClick={()=>{const n=nextWorld(world);setWorld(n);try{localStorage.setItem("mm-world-"+site.id,String(n));}catch{}}}>Change scenery ✦</button>}</div>}
-      {!compact&&<AudioSoundtrack ref={soundtrack} site={site}/>}
+      {!compact&&<AudioSoundtrack ref={soundtrack} site={site} opened={opened}/>}
       {site.chapters
         .filter((c) => !c.hidden)
         .map((c, i) => (
@@ -113,7 +114,7 @@ export default function Experience({
                 )}
                 {c.id === "1" && <NextBirthday site={site} now={now}/>}
                 {c.id === "4" && <CartoonStory site={site}/>}
-                {c.id === "5" && <MemoryConstellation site={site}/>}
+                {c.id === "5" && <PhotoGallery photos={c.media.filter(m=>m.kind==='image')}/>}
                 {c.id === "10" ? (
                   <>
                     <button
@@ -149,9 +150,10 @@ export default function Experience({
                 )}
               </>
             )}
-            {c.media.some(m=>m.kind!=='audio') && (
+            {c.id==='5'&&<MemoryConstellation site={site}/>}
+            {c.media.some(m=>m.kind!=='audio'&&(c.id!=='5'||m.kind!=='image')) && (
               <div className="media-grid">
-                {c.media.filter(m=>m.kind!=='audio').map((m) => (
+                {c.media.filter(m=>m.kind!=='audio'&&(c.id!=='5'||m.kind!=='image')).map((m) => (
                   <figure key={m.id}>
                     {m.kind === "image" ? (
                       <div className="crop">
