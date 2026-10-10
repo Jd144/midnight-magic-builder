@@ -194,6 +194,7 @@ export default function Home() {
     setProgress(0);
     try {
       const kind = validateFile(file);
+      if(kind==='audio'&&!replaceId&&(site.music?1:0)+site.chapters.flatMap(c=>c.media).filter(m=>m.kind==='audio').length>=6)throw new Error('Your soundtrack holds six songs. Remove a song before adding another.');
       const id = crypto.randomUUID();
       let src = "local:" + id;
       let path: string | undefined;
@@ -235,7 +236,7 @@ export default function Home() {
         await storeBlob(id, file);
         setProgress(100);
       }
-      if (kind === "audio") {
+      if (kind === "audio" && !site.music && !replaceId) {
         update({ music: src, musicPath: path });
       } else {
         const previous = chapter.media.find((m) => m.id === replaceId);
@@ -244,7 +245,7 @@ export default function Home() {
           kind,
           src,
           path,
-          caption: previous?.caption || "",
+          caption: previous?.caption || (kind==='audio'?file.name.replace(/\.[^.]+$/,''):''),
           x: previous?.x ?? 50,
           y: previous?.y ?? 50,
           zoom: previous?.zoom ?? 1,
@@ -670,6 +671,7 @@ export default function Home() {
                     <div className="eyebrow">COLLECT THE LITTLE MOMENTS</div>
                     <h2>Memories, brought to life.</h2>
                     <p className="muted">Add media to “{chapter.title}”.</p>
+                    <p className="muted">Music: upload up to six MP3, OGG or WAV songs, one at a time. The first is background music; extra songs join the music switcher. They start when the recipient draws the curtains.</p>
                     <label className="upload">
                       {" "}
                       <Plus /> Choose photos, video or music
@@ -746,7 +748,7 @@ export default function Home() {
                           </div>
                         )}
                         <label>
-                          Caption / image description
+                          {m.kind==='audio'?'Song name':'Caption / image description'}
                           <input
                             value={m.caption}
                             onChange={(e) =>
@@ -786,7 +788,7 @@ export default function Home() {
                             accept={
                               m.kind === "image"
                                 ? "image/jpeg,image/png,image/webp"
-                                : "video/mp4,video/webm"
+                                : m.kind==='audio'?'audio/mpeg,audio/ogg,audio/wav':"video/mp4,video/webm"
                             }
                             onChange={(e) => {
                               if (e.target.files?.[0])

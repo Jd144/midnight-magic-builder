@@ -1,9 +1,9 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import MemoryConstellation from "./MemoryConstellation";
 import CartoonStory from "./CartoonStory";
 import Keepsake from "./Keepsake";
-import YouTubeSoundtrack from "./YouTubeSoundtrack";
+import AudioSoundtrack, {type SoundtrackHandle} from "./AudioSoundtrack";
 import {NextBirthday,MeetingClock} from "./MagicClocks";
 import {worlds,nextWorld} from "@/lib/magic";
 import Celebration from "./Celebration";
@@ -23,6 +23,7 @@ export default function Experience({
   useEffect(()=>{if(!theatrical||site.rotateThemes===false)return;const key='mm-world-'+site.id;let choice=Math.floor(Math.random()*worlds.length);try{const previous=localStorage.getItem(key);if(previous!==null)choice=nextWorld(Number(previous));localStorage.setItem(key,String(choice));}catch{}setWorld(choice);},[site.id,site.rotateThemes,theatrical]);
   const scenery=worlds[world];
   const [opened, setOpened] = useState(!theatrical);
+  const soundtrack=useRef<SoundtrackHandle>(null);
   const [curtainGone, setCurtainGone] = useState(!theatrical);
   useEffect(() => {if(!opened)return;const timer=setTimeout(()=>setCurtainGone(true),1600);return()=>clearTimeout(timer);},[opened]);
   const [now, setNow] = useState(0);
@@ -46,18 +47,10 @@ export default function Experience({
         } as React.CSSProperties
       }
     >
-      {!curtainGone && <div role="dialog" aria-modal="true" aria-label="Birthday premiere" className={"curtain-stage "+(opened?"curtain-opening":"")}><div className="curtain-panel curtain-left" aria-hidden="true"/><div className="curtain-panel curtain-right" aria-hidden="true"/>{!opened && <div className="curtain-invitation"><span className="eyebrow">YOUR MIDNIGHT PREMIERE</span><div className="curtain-seal" aria-hidden="true">✦</div><h1>A whole universe,<br/>waiting for you.</h1><p>Some stories deserve a grand entrance.</p><button className="primary" onClick={()=>setOpened(true)}>Draw the curtains ✦</button><small>Take your time. This moment is yours.</small></div>}</div>}
+      {!curtainGone && <div role="dialog" aria-modal="true" aria-label="Birthday premiere" className={"curtain-stage "+(opened?"curtain-opening":"")}><div className="curtain-panel curtain-left" aria-hidden="true"/><div className="curtain-panel curtain-right" aria-hidden="true"/>{!opened && <div className="curtain-invitation"><span className="eyebrow">YOUR MIDNIGHT PREMIERE</span><div className="curtain-seal" aria-hidden="true">✦</div><h1>A whole universe,<br/>waiting for you.</h1><p>Some stories deserve a grand entrance.</p><button className="primary" onClick={()=>{soundtrack.current?.start();setOpened(true);}}>Draw the curtains ✦</button><small>Take your time. This moment is yours.</small></div>}</div>}
       <div inert={!opened} aria-hidden={!opened}>
       {theatrical&&<div className="world-label"><span>{scenery.name}</span>{site.rotateThemes!==false&&<button onClick={()=>{const n=nextWorld(world);setWorld(n);try{localStorage.setItem("mm-world-"+site.id,String(n));}catch{}}}>Change scenery ✦</button>}</div>}
-      {!compact&&!!site.youtubeSongs?.some(s=>s.trim())&&<YouTubeSoundtrack songs={site.youtubeSongs}/>}
-      {!compact && !site.youtubeSongs?.some(s=>s.trim()) && site.music && (
-        <audio
-          controls
-          loop
-          src={safeMediaURL(site.music)}
-          aria-label="Optional background music"
-        />
-      )}
+      {!compact&&<AudioSoundtrack ref={soundtrack} site={site}/>}
       {site.chapters
         .filter((c) => !c.hidden)
         .map((c, i) => (
@@ -133,7 +126,7 @@ export default function Experience({
                       <><p>{c.text || "A wonderful surprise is waiting here."}</p><MeetingClock site={site} now={now}/></>
                     )}
                   </>
-                ) : c.id === "4" || c.id === "8" || c.id === "9" ? (
+                ) : c.id === "4" ? null : c.id === "8" || c.id === "9" ? (
                   <div className="notes">
                     {(c.text || "Add a memory, reason or wish on each line.")
                       .split("\n")
@@ -156,9 +149,9 @@ export default function Experience({
                 )}
               </>
             )}
-            {c.media.length > 0 && (
+            {c.media.some(m=>m.kind!=='audio') && (
               <div className="media-grid">
-                {c.media.map((m) => (
+                {c.media.filter(m=>m.kind!=='audio').map((m) => (
                   <figure key={m.id}>
                     {m.kind === "image" ? (
                       <div className="crop">
