@@ -19,3 +19,8 @@ export const diaryEntries = sqliteTable('diary_entries', {
   id: text('id').primaryKey(), siteId: text('site_id').notNull().references(() => publications.id),
   userId: text('user_id').notNull(), body: text('body').notNull(), created: text('created').notNull(), updated: text('updated').notNull(),
 });
+
+export const wishCapsules = sqliteTable('wish_capsules', {
+  id: text('id').primaryKey(), siteId: text('site_id').notNull().references(() => publications.id),
+  userId: text('user_id').notNull(), body: text('body').notNull(), created: text('created').notNull(), unlockAt: integer('unlock_at').notNull(),
+});

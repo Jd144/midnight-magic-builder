@@ -140,13 +140,11 @@ export async function publish(site: Site, onProgress?: (value: number) => void, 
   await saveSite(site);
   if (!supabase) {
     if (onlineSharing) return publishOnline(site, onProgress, onWarning);
-    localStorage.setItem(
-      "mm-published-" + site.id,
-      JSON.stringify({
-        ...structuredClone(site),
-        chapters: site.chapters.filter((c) => !c.hidden),
-      }),
-    );
+    const snapshot=structuredClone(site);
+    snapshot.chapters=snapshot.chapters.filter(c=>!c.hidden);
+    if(!snapshot.chapters.some(c=>c.id==='4')){delete snapshot.comicScenes;delete snapshot.storyCharacters;}
+    if(!snapshot.chapters.some(c=>c.id==='10'))delete snapshot.metAt;
+    localStorage.setItem('mm-published-'+site.id,JSON.stringify(snapshot));
     return site.id;
   }
   const { data, error } = await supabase.rpc("publish_site", {

@@ -4,12 +4,13 @@ import { and, eq, sql } from 'drizzle-orm';
 import { getDb } from '@/db';
 import { publications, uploads, publicationLimits } from '@/db/schema';
 import { assertGuest } from '@/lib/story-access';
+import {youtubeVideoId,validZone,zonedTime} from '@/lib/magic';
 import { validateFile } from '@/lib/model';
 
 const uuid = z.string().uuid();
 const text = z.string().max(12000);
 const media = z.object({id: z.string().max(100),kind:z.enum(['image','video','audio']),src:z.string().max(2000),caption:text,x:z.number().min(0).max(100),y:z.number().min(0).max(100),zoom:z.number().min(1).max(3)});
-const siteSchema = z.object({id:uuid,title:text,recipient:text,nickname:text,date:z.string().max(100),color:z.string().regex(/^#[a-fA-F0-9]{6}$/),font:z.enum(['serif','sans']),music:z.string().max(2000),updated:z.string().max(100),chapters:z.array(z.object({id:z.string().max(100),title:text,text,hidden:z.literal(false),media:z.array(media).max(40)})).max(12)});
+const siteSchema = z.object({id:uuid,title:text,recipient:text,nickname:text,date:z.string().max(100),color:z.string().regex(/^#[a-fA-F0-9]{6}$/),font:z.enum(['serif','sans']),music:z.string().max(2000),timeZone:z.string().max(80).refine(validZone).optional(),metAt:z.string().max(32).optional(),rotateThemes:z.boolean().optional(),youtubeSongs:z.array(z.string().max(2000).refine(v=>!v.trim()||!!youtubeVideoId(v),'Use HTTPS YouTube video links.')).max(6).optional(),storyCharacters:z.array(z.string().max(60)).max(2).optional(),comicScenes:z.array(z.string().max(600)).max(4).optional(),updated:z.string().max(100),chapters:z.array(z.object({id:z.string().max(100),title:text,text,hidden:z.literal(false),media:z.array(media).max(40)})).max(12)});
 export function json(data: unknown, status=200) { return Response.json(data, {status, headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}}); }
 export function fail(error: unknown) { return json({error: error instanceof Error ? error.message : 'Sharing failed.'}, error instanceof SharingError ? error.status : 400); }
 export class SharingError extends Error {constructor(message:string, public status=400){super(message);}}
@@ -52,6 +53,10 @@ export async function publishSnapshot(request:Request,id:string) {
   const body = await request.text();
   if (body.length>200000) throw new SharingError('Story is too large.');
   const snapshot = siteSchema.parse(JSON.parse(body));
+  if(!snapshot.chapters.some(c=>c.id==='4')){delete snapshot.comicScenes;delete snapshot.storyCharacters;}
+  if(!snapshot.chapters.some(c=>c.id==='10'))delete snapshot.metAt;
+  if(snapshot.metAt && zonedTime(snapshot.metAt,snapshot.timeZone||'UTC')===null) throw new SharingError('Check the first meeting date and timezone.');
+  if(snapshot.youtubeSongs)snapshot.youtubeSongs=snapshot.youtubeSongs.map(s=>s.trim()).filter(Boolean);
   if(snapshot.id!==id) throw new SharingError('Story ID mismatch.');
   const origin = new URL(request.url).origin;
   const warnings: string[] = [];

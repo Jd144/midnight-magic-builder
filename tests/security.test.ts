@@ -17,6 +17,7 @@ test("Postgres migration: ownership, snapshot isolation and anonymous publicatio
     await db.exec(
       await readFile("supabase/migrations/202610090001_initial.sql", "utf8"),
     );
+    await db.exec(await readFile("supabase/migrations/202610100001_hidden_story_extras.sql", "utf8"));
     await db.exec(await readFile("supabase/tests/ownership.sql", "utf8"));
     const result = await db.query<{ count: number }>(
       "select count(*)::int as count from public.sites",

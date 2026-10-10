@@ -2,9 +2,9 @@
   "url": "https://midnight-magic-birthday-studio.awake-sky-0868.chatgpt.site",
   "access": "public",
   "mode": "online-sharing-local-drafts",
-  "version_id": "appgprj_6ac8cf55e1188191a47aba32fbe8e936~appgver_eddfbc5ae1908191a6aa466a947c3464",
-  "source_commit": "b61b8dcd4ed10e0339fcec52f55416609a9a3793",
-  "deployment_id": "appgdep_6aca6aba887c8191b50d22a95950b9a6",
+  "version_id": "appgprj_6ac8cf55e1188191a47aba32fbe8e936~appgver_2ff8539d585c81918d05c494d285dd95",
+  "source_commit": "220cf658613c10094cc8dfd60fb6c4ec8ca75ea8",
+  "deployment_id": "appgdep_6aca75a9c8cc8191bcf4441256916e90",
   "hosted_source_checkout": "work/public-hosting",
   "adapter": "Sites Vinext starter 1.0.0-beta.5"
 }

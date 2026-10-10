@@ -39,6 +39,12 @@ export type Site = {
   font: string;
   music: string;
   musicPath?: string;
+  timeZone?: string;
+  metAt?: string;
+  rotateThemes?: boolean;
+  youtubeSongs?: string[];
+  storyCharacters?: string[];
+  comicScenes?: string[];
   chapters: Chapter[];
   updated: string;
   slug?: string;

@@ -1,7 +1,8 @@
 import { and, eq, sql, desc, isNull } from 'drizzle-orm';
 import { z } from 'zod';
 import { getDb } from '@/db';
-import { publications, guestSessions, diaryEntries, publicationLimits } from '@/db/schema';
+import {nextBirthday,capsuleView} from '@/lib/magic';
+import { publications, guestSessions, diaryEntries, wishCapsules, publicationLimits } from '@/db/schema';
 import { digest, owner, json, SharingError } from './sharing-server';
 
 export function sameOrigin(request:Request) {
@@ -62,7 +63,7 @@ export async function unlock(request:Request,id:string) {
   response.headers.set('Set-Cookie',`mm-guest-${id}=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=86400${new URL(request.url).protocol==='https:'?'; Secure':''}`);
   return response;
 }
-async function recipient(request:Request,id:string) {
+export async function recipient(request:Request,id:string) {
   const row=await publication(id);
   if(!row.diaryEmail)throw new SharingError('The creator has not enabled a recipient diary yet.',404);
   // These identity headers are injected and verified by Sites dispatch in production.
@@ -80,15 +81,39 @@ export async function diary(request:Request,id:string) {
   }
   sameOrigin(request);
   const data=z.object({id:z.string().uuid(),body:z.string().trim().min(1).max(12000)}).parse(await request.json());
-  if(!row.recipientId) {
-    await db.update(publications).set({recipientId:userId}).where(and(eq(publications.id,id),isNull(publications.recipientId),eq(publications.diaryEmail,row.diaryEmail!)));
-    const claimed=await db.select().from(publications).where(eq(publications.id,id)).get();
-    if(claimed?.recipientId!==userId)throw new SharingError('The diary belongs to another account.',403);
-  }
+  await claimRecipient(id,userId,row.diaryEmail!);
   const existing=await db.select().from(diaryEntries).where(eq(diaryEntries.id,data.id)).get();
   if(existing && (existing.userId!==userId||existing.siteId!==id))throw new SharingError('Entry unavailable.',403);
   if(!existing){const count=await db.select({count:sql<number>`count(*)`}).from(diaryEntries).where(eq(diaryEntries.siteId,id)).get();if((count?.count||0)>=200)throw new SharingError('Your diary has reached its 200-entry limit. You can still edit existing entries.');}
   const now=new Date().toISOString();
   await db.insert(diaryEntries).values({id:data.id,siteId:id,userId,body:data.body,created:now,updated:now}).onConflictDoUpdate({target:diaryEntries.id,set:{body:data.body,updated:now},setWhere:and(eq(diaryEntries.siteId,id),eq(diaryEntries.userId,userId))});
   return json({saved:true,updated:now});
+}
+
+async function claimRecipient(id:string,userId:string,email:string) {
+ const db=getDb();
+
+    await db.update(publications).set({recipientId:userId}).where(and(eq(publications.id,id),isNull(publications.recipientId),eq(publications.diaryEmail,email)));
+    const claimed=await db.select().from(publications).where(eq(publications.id,id)).get();
+    if(claimed?.recipientId!==userId)throw new SharingError('The diary belongs to another account.',403);
+}
+export async function capsule(request:Request,id:string) {
+ const {row,userId}=await recipient(request,id);const db=getDb();
+ const rows=await db.select().from(wishCapsules).where(and(eq(wishCapsules.siteId,id),eq(wishCapsules.userId,userId))).orderBy(desc(wishCapsules.created)).limit(30);
+ const now=Date.now();
+ if(request.method==='GET')return json({capsules:rows.map(r=>capsuleView(r,now))});
+ sameOrigin(request);
+ const {body}=z.object({body:z.string().trim().min(1).max(2000)}).parse(await request.json());
+ const existing=rows.find(r=>r.unlockAt>now);if(existing)return json({sealed:true,capsule:capsuleView(existing,now),alreadySealed:true});
+ const snapshot=JSON.parse(row.snapshot!);const unlockAt=nextBirthday(snapshot.date,now,snapshot.timeZone||'UTC');
+ if(!unlockAt)throw new SharingError('Ask the creator to add a valid birthday date and publish again.');
+ if(rows.length>=30)throw new SharingError('This story has reached its capsule limit. Your existing capsules are safe.');
+ await claimRecipient(id,userId,row.diaryEmail!);
+ const capsuleId=await digest(id+'|'+userId+'|'+unlockAt);
+ const created=new Date(now).toISOString();
+ // One active capsule per account/story; retries cannot overwrite a sealed wish.
+ const result=await db.run(sql`INSERT INTO wish_capsules (id,site_id,user_id,body,created,unlock_at) SELECT ${capsuleId},${id},${userId},${body},${created},${unlockAt} WHERE NOT EXISTS (SELECT 1 FROM wish_capsules WHERE site_id=${id} AND user_id=${userId} AND unlock_at>${now}) ON CONFLICT DO NOTHING`);
+ const sealed=await db.select().from(wishCapsules).where(and(eq(wishCapsules.siteId,id),eq(wishCapsules.userId,userId))).orderBy(desc(wishCapsules.unlockAt)).get();
+ if(!sealed)throw new SharingError('Could not seal your wish. Try again.');
+ return json({sealed:true,capsule:capsuleView(sealed,now),alreadySealed:!result.meta.changes});
 }

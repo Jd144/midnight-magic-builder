@@ -44,7 +44,7 @@ test('legacy story preserved; independent visitors, media, ownership, snapshot i
   await expect(view.getByText('A preserved birthday message',{exact:true})).toBeVisible();
   await expect(view.locator('img').first()).toBeVisible();
   await expect.poll(()=>view.locator('img').first().evaluate(img=>(img as HTMLImageElement).naturalWidth)).toBe(1);
-  expect(await view.evaluate(()=>Object.keys(localStorage).length)).toBe(0);
+  expect(await view.evaluate(()=>Object.keys(localStorage).filter(key=>!key.startsWith('mm-world-')).length)).toBe(0);
   expect(await view.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
   const publicSnapshot=await (await probe('GET','/api/sharing/'+story.id)).json();
   expect(publicSnapshot.music).toBe('');

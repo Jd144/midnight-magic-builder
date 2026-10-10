@@ -15,6 +15,13 @@
       "when": 1791649327189,
       "tag": "0001_dashing_whistler",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1791652134817,
+      "tag": "0002_nostalgic_ser_duncan",
+      "breakpoints": true
     }
   ]
 }

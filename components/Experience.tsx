@@ -1,5 +1,11 @@
 "use client";
 import { useEffect, useState } from "react";
+import MemoryConstellation from "./MemoryConstellation";
+import CartoonStory from "./CartoonStory";
+import Keepsake from "./Keepsake";
+import YouTubeSoundtrack from "./YouTubeSoundtrack";
+import {NextBirthday,MeetingClock} from "./MagicClocks";
+import {worlds,nextWorld} from "@/lib/magic";
 import Celebration from "./Celebration";
 import { Site, safeMediaURL, isEmbed } from "@/lib/model";
 export default function Experience({
@@ -13,6 +19,9 @@ export default function Experience({
   theatrical?: boolean;
   children?: React.ReactNode;
 }) {
+  const [world,setWorld]=useState(0);
+  useEffect(()=>{if(!theatrical||site.rotateThemes===false)return;const key='mm-world-'+site.id;let choice=Math.floor(Math.random()*worlds.length);try{const previous=localStorage.getItem(key);if(previous!==null)choice=nextWorld(Number(previous));localStorage.setItem(key,String(choice));}catch{}setWorld(choice);},[site.id,site.rotateThemes,theatrical]);
+  const scenery=worlds[world];
   const [opened, setOpened] = useState(!theatrical);
   const [curtainGone, setCurtainGone] = useState(!theatrical);
   useEffect(() => {if(!opened)return;const timer=setTimeout(()=>setCurtainGone(true),1600);return()=>clearTimeout(timer);},[opened]);
@@ -26,10 +35,12 @@ export default function Experience({
   const diff = site.date ? Math.max(0, new Date(site.date).getTime() - now) : 0;
   return (
     <div
-      className={"experience " + (compact ? "compact" : "")}
+      className={"experience world-"+world+" " + (compact ? "compact" : "")}
       style={
         {
-          "--accent": site.color,
+          "--accent": theatrical&&site.rotateThemes!==false?scenery.accent:site.color,
+          "--world-bg":scenery.background,"--world-glow":scenery.glow,"--curtain-main":scenery.curtain,
+          backgroundColor:theatrical?scenery.background:undefined,
           fontFamily:
             site.font === "serif" ? "Georgia, serif" : "Arial, sans-serif",
         } as React.CSSProperties
@@ -37,7 +48,9 @@ export default function Experience({
     >
       {!curtainGone && <div role="dialog" aria-modal="true" aria-label="Birthday premiere" className={"curtain-stage "+(opened?"curtain-opening":"")}><div className="curtain-panel curtain-left" aria-hidden="true"/><div className="curtain-panel curtain-right" aria-hidden="true"/>{!opened && <div className="curtain-invitation"><span className="eyebrow">YOUR MIDNIGHT PREMIERE</span><div className="curtain-seal" aria-hidden="true">✦</div><h1>A whole universe,<br/>waiting for you.</h1><p>Some stories deserve a grand entrance.</p><button className="primary" onClick={()=>setOpened(true)}>Draw the curtains ✦</button><small>Take your time. This moment is yours.</small></div>}</div>}
       <div inert={!opened} aria-hidden={!opened}>
-      {!compact && site.music && (
+      {theatrical&&<div className="world-label"><span>{scenery.name}</span>{site.rotateThemes!==false&&<button onClick={()=>{const n=nextWorld(world);setWorld(n);try{localStorage.setItem("mm-world-"+site.id,String(n));}catch{}}}>Change scenery ✦</button>}</div>}
+      {!compact&&!!site.youtubeSongs?.some(s=>s.trim())&&<YouTubeSoundtrack songs={site.youtubeSongs}/>}
+      {!compact && !site.youtubeSongs?.some(s=>s.trim()) && site.music && (
         <audio
           controls
           loop
@@ -105,6 +118,9 @@ export default function Experience({
                     )}
                   </div>
                 )}
+                {c.id === "1" && <NextBirthday site={site} now={now}/>}
+                {c.id === "4" && <CartoonStory site={site}/>}
+                {c.id === "5" && <MemoryConstellation site={site}/>}
                 {c.id === "10" ? (
                   <>
                     <button
@@ -114,7 +130,7 @@ export default function Experience({
                       {revealed ? "Hide surprise" : "Open your surprise ✦"}
                     </button>
                     {revealed && (
-                      <p>{c.text || "A wonderful surprise is waiting here."}</p>
+                      <><p>{c.text || "A wonderful surprise is waiting here."}</p><MeetingClock site={site} now={now}/></>
                     )}
                   </>
                 ) : c.id === "4" || c.id === "8" || c.id === "9" ? (
@@ -136,7 +152,7 @@ export default function Experience({
                   </p>
                 )}
                 {c.id === "11" && (
-                  <Celebration name={site.nickname || site.recipient}/>
+                  <><Celebration name={site.nickname || site.recipient}/><Keepsake site={site} accent={theatrical&&site.rotateThemes!==false?scenery.accent:site.color}/></>
                 )}
               </>
             )}
