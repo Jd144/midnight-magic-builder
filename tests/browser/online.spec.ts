@@ -40,7 +40,7 @@ test('legacy story preserved; independent visitors, media, ownership, snapshot i
     }
     throw new Error('Preview unavailable');
   }
-  const view=await visitor.newPage();await view.goto(href!);
+  const view=await visitor.newPage();await view.goto(href!);await view.getByRole('button',{name:'Draw the curtains',exact:false}).click();
   await expect(view.getByText('A preserved birthday message',{exact:true})).toBeVisible();
   await expect(view.locator('img').first()).toBeVisible();
   await expect.poll(()=>view.locator('img').first().evaluate(img=>(img as HTMLImageElement).naturalWidth)).toBe(1);
@@ -66,10 +66,10 @@ test('legacy story preserved; independent visitors, media, ownership, snapshot i
   const foreign=structuredClone(publicSnapshot);foreign.chapters[0].media[0].src=new URL('/api/sharing/'+crypto.randomUUID()+'/media/'+crypto.randomUUID(),href!).href;
   expect((await probe('PUT','/api/sharing/'+story.id,{headers:ownHeader,data:foreign})).status()).toBe(403);
   await page.getByLabel('Your words',{exact:true}).fill('Private draft edit');await page.getByRole('button',{name:'Save draft',exact:true}).click();
-  await view.reload();await expect(view.getByText('A preserved birthday message',{exact:true})).toBeVisible();
+  await view.reload();await view.getByRole('button',{name:'Draw the curtains',exact:false}).click();await expect(view.getByText('A preserved birthday message',{exact:true})).toBeVisible();
   await expect(view.getByText('Private draft edit',{exact:true})).toHaveCount(0);
   await page.getByRole('button',{name:'Publish online',exact:true}).click();await expect(page.getByRole('status')).toContainText('Published');
-  await view.reload();await expect(view.getByText('Private draft edit',{exact:true})).toBeVisible();
+  await view.reload();await view.getByRole('button',{name:'Draw the curtains',exact:false}).click();await expect(view.getByText('Private draft edit',{exact:true})).toBeVisible();
   await page.getByRole('button',{name:'Unpublish',exact:true}).click();await expect(page.getByRole('status')).toContainText('removed');
   expect((await probe('GET','/api/sharing/'+story.id)).status()).toBe(404);
   expect((await probe('GET',photo.src)).status()).toBe(404);

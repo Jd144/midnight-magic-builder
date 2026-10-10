@@ -14,7 +14,7 @@ function ownerKey(id: string) {
   }
   return value;
 }
-async function request(id: string, method: string, body?: BodyInit, suffix = '', type = 'application/json') {
+export async function request(id: string, method: string, body?: BodyInit, suffix = '', type = 'application/json') {
   const send = () => fetch('/api/sharing/' + id + suffix, {
     method, headers: {Authorization: 'Bearer ' + ownerKey(id), 'Content-Type': type}, body,
   });
@@ -108,6 +108,7 @@ export async function removeOnline(id: string) {
 }
 export async function readOnline(id: string): Promise<Site> {
   const response = await fetch('/api/sharing/' + id, {cache: 'no-store'});
+  if (response.status === 401) throw new Error('PASSWORD_REQUIRED');
   if (!response.ok) throw new Error('This story is not online yet, or its owner has unpublished it. If you created it before the sharing update, open your saved story in the original browser and choose Publish online once.');
   return response.json();
 }

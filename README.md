@@ -77,3 +77,15 @@ For another host, deploy the original Next.js app to Node.js or Vercel. Set both
 ## Specification provenance
 
 The full user message was recovered from the referenced conversation with an expanded read limit. It includes all ten feature requirements. The original chapter blueprint is unavailable, so the twelve supplied provisional chapters are used.
+
+## Private birthday gifts and recipient diary
+
+In the hosted studio, open **Style → Password & private diary**. Set a birthday password of at least eight characters and the recipient’s ChatGPT account email, then save the access settings. The password gate applies immediately to existing published links and QR destinations. Share the password separately; it is never encoded in the QR or included in the snapshot. Leave the password empty to keep the current one; use the explicit checkbox to remove protection.
+
+The gift opens with an accessible curtain reveal and finishes with an interactive candle wish and confetti. Reduced-motion preferences disable the animations. Existing text, chapter order and original media are preserved.
+
+At the end, the recipient signs in with ChatGPT to open their private diary. Entries autosave after a one-second typing pause, receive a server timestamp and remain available to that account across devices. Keep the page open until Saved appears. Entries can be reopened and edited, with their original creation date retained. The diary supports 200 entries of 12,000 characters each. Diary contents never enter public snapshots or creator APIs. Once an entry is saved, its recipient account is bound and cannot be reassigned by the creator. No diary is enabled until the creator configures a recipient email.
+
+The Sites adapter stores salted PBKDF2-SHA256 password hashes (100,000 iterations), hashes guest-session tokens and uses HttpOnly/SameSite cookies that expire after 24 hours. Changing the password invalidates existing guest sessions. Uploaded media requires the same gate; external media remains governed by its external host. Unlock attempts are limited per story/IP to ten in each fifteen-minute window. Recipient authorization uses Sites-verified identity headers and a server-side account binding. Password/diary settings and records use an additive Drizzle migration. Browser demo and standalone Supabase modes do not offer this hosted password/diary feature.
+
+`tests/browser/gift.spec.ts` checks access settings, password and uploaded-media protection, curtain/candle interaction, mobile width, session invalidation and foreign-owner denial. Local identity fixtures exercise diary autosave, creation timestamps, cross-session retrieval, account isolation and recipient reassignment denial. Production tests reject forged identity headers; a real recipient must complete the platform-owned ChatGPT sign-in flow.

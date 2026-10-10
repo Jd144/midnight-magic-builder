@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { and, eq, sql } from 'drizzle-orm';
 import { getDb } from '@/db';
 import { publications, uploads, publicationLimits } from '@/db/schema';
+import { assertGuest } from '@/lib/story-access';
 import { validateFile } from '@/lib/model';
 
 const uuid = z.string().uuid();
@@ -11,9 +12,9 @@ const media = z.object({id: z.string().max(100),kind:z.enum(['image','video','au
 const siteSchema = z.object({id:uuid,title:text,recipient:text,nickname:text,date:z.string().max(100),color:z.string().regex(/^#[a-fA-F0-9]{6}$/),font:z.enum(['serif','sans']),music:z.string().max(2000),updated:z.string().max(100),chapters:z.array(z.object({id:z.string().max(100),title:text,text,hidden:z.literal(false),media:z.array(media).max(40)})).max(12)});
 export function json(data: unknown, status=200) { return Response.json(data, {status, headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}}); }
 export function fail(error: unknown) { return json({error: error instanceof Error ? error.message : 'Sharing failed.'}, error instanceof SharingError ? error.status : 400); }
-class SharingError extends Error {constructor(message:string, public status=400){super(message);}}
-async function digest(value:string) {return [...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value)))].map(v=>v.toString(16).padStart(2,'0')).join('');}
-async function owner(request:Request,id:string) {
+export class SharingError extends Error {constructor(message:string, public status=400){super(message);}}
+export async function digest(value:string) {return [...new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value)))].map(v=>v.toString(16).padStart(2,'0')).join('');}
+export async function owner(request:Request,id:string) {
   uuid.parse(id);
   const origin = request.headers.get('origin');
   if (origin && origin !== new URL(request.url).origin) throw new SharingError('Cross-origin writes are not allowed.',403);
@@ -38,8 +39,9 @@ export async function reserve(request:Request,id:string) {
   }
   return json({id});
 }
-export async function read(id:string) {
+export async function read(request:Request,id:string) {
   uuid.parse(id);
+  await assertGuest(request,id);
   const row = await getDb().select({snapshot:publications.snapshot}).from(publications).where(eq(publications.id,id)).get();
   return row?.snapshot ? json(JSON.parse(row.snapshot)) : json({error:'Story unavailable.'},404);
 }
@@ -96,6 +98,7 @@ export async function upload(request:Request,id:string,file:string) {
 }
 export async function readMedia(request:Request,id:string,file:string) {
   uuid.parse(id);uuid.parse(file);
+  await assertGuest(request,id);
   const row=await getDb().select({snapshot:publications.snapshot}).from(publications).where(eq(publications.id,id)).get();
   if(!row?.snapshot) return json({error:'Media unavailable.'},404);
   const snapshot=JSON.parse(row.snapshot);

@@ -2,6 +2,7 @@
 import { use, useEffect, useState } from "react";
 import { Site } from "@/lib/model";
 import { supabase, resolveMedia } from "@/lib/backend";
+import RecipientDiary from "@/components/RecipientDiary";
 import Experience from "@/components/Experience";
 import { onlineSharing, readOnline } from '@/lib/online';
 export default function Published({
@@ -12,6 +13,11 @@ export default function Published({
   const { slug } = use(params);
   const [site, setSite] = useState<Site | null>(null);
   const [error, setError] = useState("");
+  const [password,setPassword]=useState("");
+  const [unlocking,setUnlocking]=useState(false);
+  const [unlockError,setUnlockError]=useState("");
+  const [attempt,setAttempt]=useState(0);
+  async function unlock(e:React.FormEvent){e.preventDefault();setUnlocking(true);setUnlockError("");try{const r=await fetch("/api/sharing/"+slug+"/unlock",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({password})});const d=await r.json() as {error:string};if(!r.ok)throw new Error(d.error);setPassword("");setError("");setAttempt(a=>a+1);}catch(e){setUnlockError((e as Error).message);}finally{setUnlocking(false);}}
   useEffect(() => {
     let active = true;
     async function load() {
@@ -48,7 +54,7 @@ export default function Published({
     return () => {
       active = false;
     };
-  }, [slug]);
+  }, [slug,attempt]);
   return (
     <>
       {!supabase && !onlineSharing && (
@@ -58,7 +64,9 @@ export default function Published({
         </div>
       )}
       {site ? (
-        <Experience site={site} />
+        <Experience site={site} theatrical>{onlineSharing&&<RecipientDiary id={slug}/>}</Experience>
+      ) : error === "PASSWORD_REQUIRED" ? (
+        <main className="gift-lock"><div className="lock-stars" aria-hidden="true">✧ ✦ ✧</div><span className="eyebrow">A PRIVATE MIDNIGHT SURPRISE</span><h1>Some magic is<br/>just for you.</h1><p>Enter the password sent with your birthday gift.</p><form onSubmit={unlock}><label>Birthday password<input type="password" autoComplete="current-password" required maxLength={128} value={password} onChange={e=>setPassword(e.target.value)}/></label><button className="primary" disabled={unlocking}>{unlocking?"Unlocking…":"Unlock my surprise ✦"}</button>{unlockError&&<p role="alert">{unlockError}</p>}</form><small>Your password stays out of the QR and link.</small></main>
       ) : (
         <main className="loading">
           {error || "Gathering a little magic…"}

@@ -1,4 +1,5 @@
 "use client";
+import SharingSettings from "@/components/SharingSettings";
 import { useEffect, useState } from "react";
 import {
   Plus,
@@ -598,6 +599,7 @@ export default function Home() {
                   <>
                     <div className="eyebrow">SET THE MOOD</div>
                     <h2>A universe of your own.</h2>
+                    {onlineSharing && <SharingSettings key={site.id} id={site.id}/>}
                     <label>
                       Accent color
                       <input

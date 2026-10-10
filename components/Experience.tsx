@@ -1,13 +1,21 @@
 "use client";
 import { useEffect, useState } from "react";
+import Celebration from "./Celebration";
 import { Site, safeMediaURL, isEmbed } from "@/lib/model";
 export default function Experience({
   site,
   compact = false,
+  theatrical = false,
+  children,
 }: {
   site: Site;
   compact?: boolean;
+  theatrical?: boolean;
+  children?: React.ReactNode;
 }) {
+  const [opened, setOpened] = useState(!theatrical);
+  const [curtainGone, setCurtainGone] = useState(!theatrical);
+  useEffect(() => {if(!opened)return;const timer=setTimeout(()=>setCurtainGone(true),1600);return()=>clearTimeout(timer);},[opened]);
   const [now, setNow] = useState(0);
   const [revealed, setRevealed] = useState(false);
   useEffect(() => {
@@ -27,6 +35,8 @@ export default function Experience({
         } as React.CSSProperties
       }
     >
+      {!curtainGone && <div role="dialog" aria-modal="true" aria-label="Birthday premiere" className={"curtain-stage "+(opened?"curtain-opening":"")}><div className="curtain-panel curtain-left" aria-hidden="true"/><div className="curtain-panel curtain-right" aria-hidden="true"/>{!opened && <div className="curtain-invitation"><span className="eyebrow">YOUR MIDNIGHT PREMIERE</span><div className="curtain-seal" aria-hidden="true">✦</div><h1>A whole universe,<br/>waiting for you.</h1><p>Some stories deserve a grand entrance.</p><button className="primary" onClick={()=>setOpened(true)}>Draw the curtains ✦</button><small>Take your time. This moment is yours.</small></div>}</div>}
+      <div inert={!opened} aria-hidden={!opened}>
       {!compact && site.music && (
         <audio
           controls
@@ -126,10 +136,7 @@ export default function Experience({
                   </p>
                 )}
                 {c.id === "11" && (
-                  <div className="celebration">
-                    ✧ ✦ ✧<br />
-                    Here’s to another beautiful year.
-                  </div>
+                  <Celebration name={site.nickname || site.recipient}/>
                 )}
               </>
             )}
@@ -173,6 +180,8 @@ export default function Experience({
             )}
           </section>
         ))}
+      {children}
+      </div>
     </div>
   );
 }
