@@ -1,3 +1,4 @@
+import {cleanExperienceSettings} from './experiences';
 import { createClient } from "@supabase/supabase-js";
 import { Site } from "./model";
 import { onlineSharing, publishOnline, removeOnline } from './online';
@@ -141,7 +142,7 @@ export async function publish(site: Site, onProgress?: (value: number) => void, 
   if (!supabase) {
     if (onlineSharing) return publishOnline(site, onProgress, onWarning);
     const snapshot=structuredClone(site);
-    snapshot.chapters=snapshot.chapters.filter(c=>!c.hidden);
+    snapshot.chapters=snapshot.chapters.filter(c=>!c.hidden);cleanExperienceSettings(snapshot);
     if(!snapshot.chapters.some(c=>c.id==='4')){delete snapshot.comicScenes;delete snapshot.storyCharacters;}
     if(!snapshot.chapters.some(c=>c.id==='10'))delete snapshot.metAt;
     localStorage.setItem('mm-published-'+site.id,JSON.stringify(snapshot));

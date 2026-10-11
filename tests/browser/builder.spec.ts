@@ -8,6 +8,7 @@ test("demo: create, edit, save, reload, snapshot isolation, unpublish, duplicate
   await page
     .getByRole("button", { name: "Create a birthday website", exact: true })
     .click();
+  await page.getByRole("button",{name:"Choose This Experience",exact:false}).click();
   await page
     .getByLabel("Website title", { exact: true })
     .fill("Test celebration");
@@ -94,6 +95,7 @@ test("media persists across reload and crop edits; mobile has no overflow", asyn
   await page
     .getByRole("button", { name: "Create a birthday website", exact: true })
     .click();
+  await page.getByRole("button",{name:"Choose This Experience",exact:false}).click();
   await page.getByRole("button", { name: "Media", exact: true }).click();
   await page
     .locator("input[type=file]")
@@ -147,6 +149,7 @@ test("twelve chapters, countdown, surprise, theme, music and uploaded video play
   await page
     .getByRole("button", { name: "Create a birthday website", exact: true })
     .click();
+  await page.getByRole("button",{name:"Choose This Experience",exact:false}).click();
   for (let i = 0; i < 12; i++) {
     await page.locator(".chapter-row>button").nth(i).click();
     await page
@@ -212,10 +215,10 @@ test("twelve chapters, countdown, surprise, theme, music and uploaded video play
     .first()
     .setInputFiles({ name: "music.wav", mimeType: "audio/wav", buffer: wav });
   await page.getByRole("button", { name: "Preview", exact: true }).click();
-  await expect(page.locator(".experience:not(.compact) .chapter")).toHaveCount(
-    12,
-  );
+  await expect(page.locator(".experience:not(.compact) .memory-planet")).toHaveCount(12);
+  await page.getByRole("button",{name:"Open planet Birthday countdown",exact:true}).click();
   await expect(page.locator(".countdown")).toContainText("days");
+  await page.getByRole("button",{name:"Open planet Surprise reveal",exact:true}).click();
   await page
     .getByRole("button", { name: "Open your surprise ✦", exact: true })
     .click();
@@ -227,7 +230,9 @@ test("twelve chapters, countdown, surprise, theme, music and uploaded video play
     "Arial, sans-serif",
   );
   await expect(page.locator("audio")).toHaveJSProperty("autoplay", false);
-  await expect(page.locator("audio")).toHaveJSProperty("controls", true);
+  await expect(page.locator("audio")).toHaveJSProperty("controls", false);
+  await expect(page.getByRole("button",{name:"Play music",exact:true})).toBeVisible();
+  await page.getByRole("button",{name:"Open planet Final celebration",exact:true}).click();
   await expect(page.locator("video")).toHaveJSProperty("controls", true);
   await page.locator("video").evaluate(async (video: HTMLVideoElement) => {
     video.muted = true;
@@ -246,7 +251,7 @@ test("twelve chapters, countdown, surprise, theme, music and uploaded video play
   await expect(
     page
       .frameLocator('iframe[title="Mobile birthday preview"]')
-      .locator(".chapter"),
+      .locator(".memory-planet"),
   ).toHaveCount(12);
   await expect(page.locator(".mobile-preview iframe")).toHaveCSS(
     "width",

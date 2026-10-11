@@ -15,7 +15,8 @@
     "next": "^16.0.0",
     "qrcode": "^1.5.4",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react-dom": "^19.2.0",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.8",

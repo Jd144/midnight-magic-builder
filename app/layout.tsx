@@ -1,8 +1,8 @@
 import "./globals.css";
 export const metadata = {
-  title: "Midnight Magic — Make a birthday unforgettable",
+  title: "Birthday Universe Studio — Birthday Website Builder",
   description:
-    "A cinematic birthday website builder. Twelve chapters, one unforgettable gift.",
+    "Choose one of five birthday experiences and create a personal website with memories, music, letters and surprises.",
 };
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (

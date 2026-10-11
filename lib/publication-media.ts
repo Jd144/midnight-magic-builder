@@ -1,8 +1,9 @@
+import {cleanExperienceSettings} from './experiences';
 import type { Site } from './model';
 
 export function preparePublicationMedia(site: Site, origin: string, omitUnshareableMusic = false): Site {
   const snapshot = structuredClone(site);
-  snapshot.chapters = snapshot.chapters.filter(c => !c.hidden);
+  snapshot.chapters = snapshot.chapters.filter(c => !c.hidden);cleanExperienceSettings(snapshot);
   if(!snapshot.chapters.some(c=>c.id==='4')){delete snapshot.comicScenes;delete snapshot.storyCharacters;}
   if(!snapshot.chapters.some(c=>c.id==='10'))delete snapshot.metAt;
   const normalize = (source: string, label: string) => {

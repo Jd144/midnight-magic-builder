@@ -30,6 +30,8 @@ export type Chapter = {
   media: Media[];
 };
 export type Site = {
+  experience?: "universe" | "mystery" | "museum" | "classified" | "time";
+  experienceSettings?: ExperienceSettings;
   id: string;
   title: string;
   recipient: string;
@@ -49,6 +51,13 @@ export type Site = {
   updated: string;
   slug?: string;
   isPublished?: boolean;
+};
+export type ExperienceSettings = {
+ universe?: {labels?:Record<string,string>;orbit?:'elliptical'|'rings';particles?:boolean;unlock?:boolean};
+ mystery?: {count?:number;type?:'question'|'sequence';puzzles?:{question:string;answer:string;hint:string}[]};
+ museum?: {order?:string[];layout?:'salon'|'minimal';transition?:'fade'|'slide';audio?:boolean};
+ classified?: {terminal?:'green'|'amber';folders?:Record<string,string>;code?:string;clues?:boolean};
+ time?: {dates?:Record<string,string>;transition?:'warp'|'dissolve';future?:boolean};
 };
 export function newSite(): Site {
   return {
