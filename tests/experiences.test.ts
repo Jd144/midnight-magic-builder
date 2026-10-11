@@ -1,0 +1,9 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {newSite} from '../lib/model';
+import {experiences,chooseExperience,exhibitChapters} from '../lib/experiences';
+import {experienceFields} from '../lib/experience-schema';
+import {z} from 'zod';
+test('every primary theme preserves existing content, identity and all other theme settings',()=>{const original=newSite();original.recipient='Sample';original.music='https://example.test/song.mp3';original.chapters[7].text='A private personal letter';original.chapters[5].media=[{id:'photo',kind:'image',src:'local:saved-photo',caption:'Keep this caption',x:12,y:83,zoom:1.5}];original.experienceSettings={time:{dates:{'4':'2020-01-01'}},classified:{code:'story-code'}};const before=structuredClone(original);let current=original;for(const theme of experiences){current=chooseExperience(current,theme.id);const {experience,...content}=current;assert.equal(experience,theme.id);assert.deepEqual(content,before);}assert.deepEqual(original,before);});
+test('museum exhibit order does not reorder stored chapters or reveal hidden chapters',()=>{const site=newSite();site.experience='museum';site.chapters[7].hidden=true;site.experienceSettings={museum:{order:['7','5','4']}};assert.deepEqual(exhibitChapters(site).slice(0,2).map(c=>c.id),['5','4']);assert.equal(exhibitChapters(site).some(c=>c.id==='7'),false);assert.equal(site.chapters[0].id,'0');});
+test('old data and bounded theme configurations remain publishable',()=>{const schema=z.object(experienceFields);assert.deepEqual(schema.parse({}),{});assert.equal(schema.parse({experience:'time',experienceSettings:{time:{dates:{'4':'2020-01-02'},future:true}}}).experience,'time');assert.throws(()=>schema.parse({experience:'unknown'}));assert.throws(()=>schema.parse({experienceSettings:{mystery:{count:999}}}));assert.throws(()=>schema.parse({experienceSettings:{museum:{order:['5','5']}}}));});

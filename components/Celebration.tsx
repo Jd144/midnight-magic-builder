@@ -1,0 +1,6 @@
+"use client";
+import {useState} from 'react';
+export default function Celebration({name}:{name:string}) {
+ const [wished,setWished]=useState(false);const [burst,setBurst]=useState(0);
+ return <div className="birthday-moment"><div className="birthday-sky" aria-hidden="true"><span>✦</span><span>✧</span><span>✦</span></div><p className="eyebrow">ONE WISH. A WHOLE NEW YEAR.</p><h3>{wished?'May your wish find its way.':'Make a birthday wish.'}</h3><div className={'birthday-cake '+(wished?'wished':'')} aria-hidden="true"><div className="cake-candle"><i className="candle-flame"/></div><div className="cake-icing"/><div className="cake-layer"/><div className="cake-plate"/></div><button className="primary" onClick={()=>{setWished(true);setBurst(b=>b+1);}}>{wished?'Celebrate again ✨':'Blow out the candle ✨'}</button><p aria-live="polite">{wished?`Happy birthday${name?', '+name:''}. Here’s to a year full of beautiful surprises.`:'Close your eyes for a moment. This one is yours.'}</p>{burst>0&&<div key={burst} className="confetti" aria-hidden="true">{Array.from({length:48},(_,i)=><i key={i} style={{'--x':(i*37%100)+'%','--delay':(i%7*.07)+'s','--turn':(i*73)+'deg',background:['#cab5ff','#f3c77b','#f29fb9','#9be0db'][i%4]} as React.CSSProperties}/>)}</div>}</div>;
+}

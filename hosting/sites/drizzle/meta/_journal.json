@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1791566314520,
+      "tag": "0000_fluffy_earthquake",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1791649327189,
+      "tag": "0001_dashing_whistler",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1791652134817,
+      "tag": "0002_nostalgic_ser_duncan",
+      "breakpoints": true
+    }
+  ]
+}
