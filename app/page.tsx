@@ -3,6 +3,7 @@ import ThemeSelector from "@/components/ThemeSelector";
 import ExperienceSettings from "@/components/ExperienceSettings";
 import {chooseExperience} from "@/lib/experiences";
 import ExtrasEditor from "@/components/ExtrasEditor";
+import EarlierGifts from '@/components/EarlierGifts';
 import SharingSettings from "@/components/SharingSettings";
 import { useEffect, useState } from "react";
 import {
@@ -903,6 +904,7 @@ export default function Home() {
               </div>
             </div>
           </section>
+          <EarlierGifts/>
           <div className="collection-heading">
             <div>
               <h2>
