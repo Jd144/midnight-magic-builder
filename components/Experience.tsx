@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import MemoryConstellation from "./MemoryConstellation";
-import ThemeStage from "./ThemeStage";
 import PhotoGallery from "./PhotoGallery";
 import CartoonStory from "./CartoonStory";
 import Keepsake from "./Keepsake";
@@ -22,7 +21,7 @@ export default function Experience({
   children?: React.ReactNode;
 }) {
   const [world,setWorld]=useState(0);
-  useEffect(()=>{if(!theatrical||site.rotateThemes===false||site.experience)return;const key='mm-world-'+site.id;let choice=Math.floor(Math.random()*worlds.length);try{const previous=localStorage.getItem(key);if(previous!==null)choice=nextWorld(Number(previous));localStorage.setItem(key,String(choice));}catch{}setWorld(choice);},[site.id,site.rotateThemes,site.experience,theatrical]);
+  useEffect(()=>{if(!theatrical||site.rotateThemes===false)return;const key='mm-world-'+site.id;let choice=Math.floor(Math.random()*worlds.length);try{const previous=localStorage.getItem(key);if(previous!==null)choice=nextWorld(Number(previous));localStorage.setItem(key,String(choice));}catch{}setWorld(choice);},[site.id,site.rotateThemes,theatrical]);
   const scenery=worlds[world];
   const [opened, setOpened] = useState(!theatrical);
   const soundtrack=useRef<SoundtrackHandle>(null);
@@ -38,7 +37,7 @@ export default function Experience({
   const diff = site.date ? Math.max(0, new Date(site.date).getTime() - now) : 0;
   return (
     <div
-      className={"experience world-"+world+" " + (site.experience ? "experience-"+site.experience+" " : "") + (compact ? "compact" : "")}
+      className={"experience world-"+world+" " + (compact ? "compact" : "")}
       style={
         {
           "--accent": theatrical&&site.rotateThemes!==false?scenery.accent:site.color,
@@ -51,9 +50,9 @@ export default function Experience({
     >
       {!curtainGone && <div role="dialog" aria-modal="true" aria-label="Birthday premiere" className={"curtain-stage "+(opened?"curtain-opening":"")}><div className="curtain-panel curtain-left" aria-hidden="true"/><div className="curtain-panel curtain-right" aria-hidden="true"/>{!opened && <div className="curtain-invitation"><span className="eyebrow">YOUR MIDNIGHT PREMIERE</span><div className="curtain-seal" aria-hidden="true">✦</div><h1>A whole universe,<br/>waiting for you.</h1><p>Some stories deserve a grand entrance.</p><button className="primary" onClick={()=>{soundtrack.current?.start();setOpened(true);}}>Draw the curtains ✦</button><small>Take your time. This moment is yours.</small></div>}</div>}
       <div inert={!opened} aria-hidden={!opened}>
-      {theatrical&&!site.experience&&<div className="world-label"><span>{scenery.name}</span>{site.rotateThemes!==false&&<button onClick={()=>{const n=nextWorld(world);setWorld(n);try{localStorage.setItem("mm-world-"+site.id,String(n));}catch{}}}>Change scenery ✦</button>}</div>}
+      {theatrical&&<div className="world-label"><span>{scenery.name}</span>{site.rotateThemes!==false&&<button onClick={()=>{const n=nextWorld(world);setWorld(n);try{localStorage.setItem("mm-world-"+site.id,String(n));}catch{}}}>Change scenery ✦</button>}</div>}
       {!compact&&<AudioSoundtrack ref={soundtrack} site={site} opened={opened}/>}
-      <ThemeStage site={site}>{site.chapters
+      {site.chapters
         .filter((c) => !c.hidden)
         .map((c, i) => (
           <section className={"chapter chapter-" + c.id} key={c.id}>
@@ -191,7 +190,7 @@ export default function Experience({
               </div>
             )}
           </section>
-        ))}</ThemeStage>
+        ))}
       {children}
       </div>
     </div>

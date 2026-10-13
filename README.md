@@ -1,10 +1,10 @@
-# Birthday Universe Studio — Birthday Website Builder
+# Midnight Magic
 
 A reusable cinematic birthday website builder with Next.js 16, TypeScript, Tailwind CSS 4 and Supabase. No recipient is hardcoded. Includes twelve provisional chapters, a private studio, visual editing, crop and position controls, image/video/music uploads, YouTube/Vimeo links, optional music, mobile layouts and reduced-motion support.
 
 ## Public app and cross-device birthday links
 
-[Open Birthday Universe Studio](https://midnight-magic-birthday-studio.awake-sky-0868.chatgpt.site). The hosted app has **ONLINE SHARING** backed by Sites D1/R2. Choose **Publish online** to upload a separate birthday snapshot and its photos, videos and music. Visitors can open its link or QR from another device without an account. Drafts and original files remain in the editor's browser; account login and cross-device draft editing still require Supabase.
+[Open Midnight Magic](https://midnight-magic-birthday-studio.awake-sky-0868.chatgpt.site). The hosted app has **ONLINE SHARING** backed by Sites D1/R2. Choose **Publish online** to upload a separate birthday snapshot and its photos, videos and music. Visitors can open its link or QR from another device without an account. Drafts and original files remain in the editor's browser; account login and cross-device draft editing still require Supabase.
 
 **Preserving existing stories:** update/refresh the original browser, open the saved story, and choose Publish online once. The original draft, local media and previous demo snapshot are retained. The public URL keeps the original story UUID, so old birthday links and QR codes start working after activation. Existing demo snapshots are not silently exposed. Nothing can recover browser-only content after that browser's storage was already cleared.
 
@@ -117,11 +117,9 @@ All gifts now receive default-ON ambient aurora lighting, including stories with
 The Photo gallery chapter uses an asymmetric scrapbook museum wall with varied photo sizes, taped paper frames and preserved crop/position settings. Mobile uses a featured photo and staggered pairs; desktop uses a twelve-column collage. Clicking a photo opens an accessible native dialog with original uncropped image, caption, previous/next, arrow-key navigation, Escape and focus return. Empty galleries show an upload placeholder rather than invented personal photographs. `tests/browser/gallery.spec.ts` verifies ambient lighting without music, independent toggling, gallery layout, keyboard/lightbox access, crop preservation and mobile overflow.
 Gallery photos now enter on scroll with staggered cinematic reveal, then float gently. Full-screen photos animate on opening and navigation. Reduced-motion preferences disable these animations.
 
-## Five primary experiences
+## Original design restoration
 
-New stories start with Choose Your Birthday Universe. Preview and choose Komalverse (interactive CSS 3D planets), Mystery Game (questions or star-sequence puzzles), Digital Museum (ordered exhibits and optional audio), Classified Project (terminal and folder story puzzles), or Time Machine (dated destinations and a future-letter reveal). Change Theme in the editor preserves chapter content, recipient details, media, cropping, music, access settings and settings of every other theme. Publish again to update a gift’s chosen primary experience. Existing gifts with no experience field retain their original Midnight Magic layout; no runtime database rewrite is required.
-
-Theme settings are additive JSON fields. Apply `202610110001_experience_snapshots.sql` after existing Supabase migrations; it preserves drafts and removes theme labels/dates for hidden chapters from published snapshots. Mystery answers and the Classified story code are playful narrative puzzles visible in the snapshot, not security controls. Use the separate server-enforced gift password for privacy. Music still begins only from an explicit visitor gesture. Reduced-motion preferences disable scene transitions and planet movement.
+The original Midnight Magic editor and chapter layout have been restored from commit 126b593. The five-experience selector, alternate branding and theme-specific presentation are removed. Existing experience metadata remains compatible and stored without changing drafts or published snapshots. Curtain reveal, rotating scenery, music, lighting, animated gallery, cartoon memories, diary, capsules and existing personalization remain available. The Vercel recovery connection for older protected gifts is retained. No database rollback or saved-data rewrite is required.
 
 ## Recover earlier gifts after deploying to Vercel
 

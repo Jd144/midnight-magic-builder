@@ -1,9 +1,6 @@
 "use client";
-import ThemeSelector from "@/components/ThemeSelector";
-import ExperienceSettings from "@/components/ExperienceSettings";
-import {chooseExperience} from "@/lib/experiences";
+import EarlierGifts from "@/components/EarlierGifts";
 import ExtrasEditor from "@/components/ExtrasEditor";
-import EarlierGifts from '@/components/EarlierGifts';
 import SharingSettings from "@/components/SharingSettings";
 import { useEffect, useState } from "react";
 import {
@@ -49,8 +46,6 @@ import DevicePreview from "@/components/DevicePreview";
 import { generateQR, snapshotURL } from "@/lib/qr";
 import { onlineSharing } from '@/lib/online';
 export default function Home() {
-  const [themeSelector,setThemeSelector]=useState(false);
-  const [newThemeFlow,setNewThemeFlow]=useState(false);
   const [ready, setReady] = useState(false);
   const [user, setUser] = useState<string | null>(null);
   const [sites, setSites] = useState<Site[]>([]);
@@ -292,7 +287,7 @@ export default function Home() {
             }
           }}
         >
-          <span>✦</span><span className="brand-name">Birthday Universe<span className="brand-light"> Studio</span><small>Birthday Website Builder</small></span>
+          <span>✦</span> midnight<span className="brand-light">magic</span>
         </a>
         <div className="header-right">
           <span className="mode">
@@ -326,7 +321,6 @@ export default function Home() {
           </button>
         </div>
       )}
-      {themeSelector&&site&&<ThemeSelector site={resolved?.id===site.id?{...resolved,experience:site.experience,experienceSettings:site.experienceSettings}:site} onClose={()=>{setThemeSelector(false);if(newThemeFlow)setSite(null);}} onChoose={experience=>{setSite(current=>current?{...chooseExperience(current,experience),updated:new Date().toISOString()}:current);setThemeSelector(false);setNewThemeFlow(false);}}/>}
       {site ? (
         <>
           <div className="editor-bar">
@@ -351,7 +345,6 @@ export default function Home() {
                   : "All changes saved"}
             </span>
             <div>
-              <button onClick={()=>{setNewThemeFlow(false);setThemeSelector(true);}}>Change Theme</button>
               <button onClick={() => setPreview(!preview)}>
                 <Eye size={16} />
                 {preview ? "Edit" : "Preview"}
@@ -610,7 +603,6 @@ export default function Home() {
                     <div className="eyebrow">SET THE MOOD</div>
                     <h2>A universe of your own.</h2>
                     {onlineSharing && <SharingSettings key={site.id} id={site.id}/>}
-                    <ExperienceSettings site={site} update={update}/>
                     <ExtrasEditor site={site} update={update}/>
                     <label>
                       Accent color
@@ -874,7 +866,6 @@ export default function Home() {
                     return;
                   }
                   openStory(newSite());
-                  setNewThemeFlow(true);setThemeSelector(true);
                   setSelected("0");
                   setShare("");
                 }}
@@ -933,7 +924,6 @@ export default function Home() {
                     return;
                   }
                   openStory(newSite());
-                  setNewThemeFlow(true);setThemeSelector(true);
                   setSelected("0");
                 }}
               >
@@ -1016,7 +1006,7 @@ export default function Home() {
         </main>
       )}
       <footer>
-        Birthday Universe Studio <span>Personal birthday websites. Five extraordinary worlds.</span>
+        midnight magic <span>A little love, beautifully told.</span>
       </footer>
       {auth && (
         <div className="modal">
